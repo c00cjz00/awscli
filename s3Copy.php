@@ -1,23 +1,25 @@
 <?php
 # config #
-$endpoint="s3-cloud.nchc.org.tw";
-$sourceBucket="islide";  $copyBucket="mytmpbuckt001";
-$adminID="1603014"; $userID="1703181"; $publicBucket=1;
-$sourceFile_array=array("001.php","index.html");
+date_default_timezone_set("Asia/Taipei"); $today = "symlink".date("YmdHis"); 
+$endpoint="s3-cloud.nchc.org.tw";  $adminID="1603014"; $sourceBucket="islide"; $publicBucket=1;
+$userID_array=array("1703181","u00cjz00");  $copyBucket="mytmpbuckt".$userID_array[0]; 
+$sourceFile_array=array("001.php","a/002.php","index.html");
+$uid=10183; $gid=3254;
 
 # main #
 $mainCmd="aws --profile=cloudian --endpoint-url=http://s3-cloud.nchc.org.tw";
 
 # permission #
+$userIDList="id=\"".implode("\",id=\"",$userID_array)."\"";
 if ($publicBucket==1){
 $myPermission="--grant-full-control id=\"".$adminID."\" \
---grant-read id=\"".$userID."\",uri=\"http://acs.amazonaws.com/groups/global/AllUsers\" \
---grant-read-acp id=\"".$userID."\",uri=\"http://acs.amazonaws.com/groups/global/AllUsers\" \
+--grant-read \"".$userIDList."\",uri=\"http://acs.amazonaws.com/groups/global/AllUsers\" \
+--grant-read-acp \"".$userIDList."\",uri=\"http://acs.amazonaws.com/groups/global/AllUsers\" \
 ";
 }else{
 $myPermission="--grant-full-control id=\"".$adminID."\" \
---grant-read id=\"".$userID."\" \
---grant-read-acp id=\"".$userID."\" \
+--grant-read \"".$userIDList."\" \
+--grant-read-acp \"".$userIDList."\" \
 ";
 }
 
@@ -30,23 +32,77 @@ for($i=0;$i<count($tmpArr);$i++){
 }
 
 # remove bucket #
-if ($rmKey==1) { $cmd=$mainCmd." s3 rb s3://".$copyBucket." --force"; echo $cmd."\n"; passthru($cmd); sleep(1); }
+//if ($rmKey==1) { $cmd=$mainCmd." s3 rb s3://".$copyBucket." --force"; echo $cmd."\n"; passthru($cmd); }
 
 # make a bucket #
-$cmd=$mainCmd." s3 mb s3://".$copyBucket; echo $cmd."\n"; passthru($cmd); sleep(1);
-$cmd=$mainCmd." s3api put-bucket-acl --bucket ".$copyBucket." ".$myPermission; echo $cmd."\n"; passthru($cmd); sleep(1);
-
+if ($rmKey==0) { 
+$cmd=$mainCmd." s3 mb s3://".$copyBucket; echo $cmd."\n"; passthru($cmd); 
+$cmd=$mainCmd." s3api put-bucket-acl --bucket ".$copyBucket." ".$myPermission; echo $cmd."\n"; passthru($cmd); 
+}
 
 # copy index.html2bucketFile #
 for($i=0;$i<count($sourceFile_array);$i++){
  $sourceFile=trim($sourceFile_array[$i]);
- $cmd=$mainCmd." s3api copy-object --copy-source ".$sourceBucket."/".$sourceFile." --key ".$sourceFile." --bucket ".$copyBucket." ".$myPermission; echo $cmd."\n"; passthru($cmd); sleep(1);
+ $cmd=$mainCmd." s3api copy-object --copy-source ".$sourceBucket."/".$sourceFile." --key ".$today."/".$sourceFile." --bucket ".$copyBucket." ".$myPermission; echo $cmd."\n"; passthru($cmd); 
 }
 
 # Result #
-$hyperLink="https://".$copyBucket.".".$endpoint."/index.html";
-echo "Add External Bucket [ ".$copyBucket." ] for userid: ".$userID."\n";
-echo $hyperLink."\n";
+$s3fsMountFolder="/work1/".$copyBucket;
+$s3fsLink="fuermount -u ".$s3fsMountFolder."\nmkdir -p ".$s3fsMountFolder."\n./s3fs ".$copyBucket." ".$s3fsMountFolder." -o url=http://".$endpoint." -o use_path_request_style -o uid=10183,gid=3254,umask=000";
+echo "01. Add External Bucket [ ".$copyBucket." ] for userid: ".$userIDList."\n\n";
+
+if (isset($uid) && isset($gid) && ($uid=!"") && ($gid!="")) {
+ echo "02. Add s3fs mount command\n";
+ echo "Edit  ~/.passwd-s3fs\n";
+ echo $s3fsLink."\n\n";
+}
+
+if ($publicBucket==1) {
+ $hyperLink="https://".$copyBucket.".".$endpoint."/".$today."/index.html?prefix=".$today."/";
+ echo "04. ".$hyperLink."\n\n";
+}
+
+
+
+
+
+############## install package ################
+/*
+https://docs.aws.amazon.com/cli/latest/userguide/install-bundle.html#install-bundle-user 
+Install the AWS CLI without Sudo (Linux, macOS, or Unix)
+If you don't have sudo permissions or want to install the AWS CLI only for the current user, you can use a modified version of the previous commands.
+
+$ curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+$ unzip awscli-bundle.zip
+$ ./awscli-bundle/install -b ~/bin/aws
+This installs the AWS CLI to the default location (~/.local/lib/aws) and creates a symbolic link (symlink) at ~/bin/aws. Make sure that ~/bin is in your PATH environment variable for the symlink to work.
+
+$ echo $PATH | grep ~/bin     // See if $PATH contains ~/bin (output will be empty if it doesn't)
+$ export PATH=~/bin:$PATH     // Add ~/bin to $PATH if necessary
+Tip
+
+To ensure that your $PATH settings are retained between sessions, add the export line to your shell profile (~/.profile, ~/.bash_profile, and so on).
+*/
+
+/*
+https://cloudian.com/blog/aws-cli-s3-compatible-storage/
+aws configure
+vi ./aws/configure
+[cloudian]
+region = s3-cloud.nchc.org.tw
+output = json
+[u00cjz00]
+region = s3-cloud.nchc.org.tw
+output = json
+
+vi ./aws/credentials
+[cloudian]
+aws_access_key_id = xxx
+aws_secret_access_key = xxx
+[u00cjz00]
+aws_access_key_id = xxx
+aws_secret_access_key = xxx[
+*/
 
 
 
