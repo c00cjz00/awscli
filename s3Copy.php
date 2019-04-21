@@ -1,12 +1,21 @@
 <?php
-# config #
-date_default_timezone_set("Asia/Taipei"); $today = "symlink".date("YmdHis"); 
-$endpoint="s3-cloud.nchc.org.tw";  $adminID="1603014"; $sourceBucket="islide"; $publicBucket=1;
-$userID_array=array("1703181","u00cjz00");  $copyBucket="mytmpbuckt".$userID_array[0]; 
-$sourceFile_array=array("001.php","a/002.php","index.html");
+# admin config #
+date_default_timezone_set("Asia/Taipei"); 
+$today = "hmpsymlink".date("YmdHis"); 
+$endpoint="s3-cloud.nchc.org.tw";  
+$adminID="1603014"; 
+$sourceBucket="islide"; 
+$publicBucket=1;
+
+# user config #
+$userID_array=array("u00cjz00","1703181");  
+$copyBucket="hmpbuckt".$userID_array[0]; 
 $uid=10183; $gid=3254;
 
-# main #
+# copy file #
+$sourceFile_array=array("001.php","a/002.php","index.html");
+
+# main cmd #
 $mainCmd="aws --profile=cloudian --endpoint-url=http://s3-cloud.nchc.org.tw";
 
 # permission #
@@ -46,17 +55,25 @@ for($i=0;$i<count($sourceFile_array);$i++){
  $cmd=$mainCmd." s3api copy-object --copy-source ".$sourceBucket."/".$sourceFile." --key ".$today."/".$sourceFile." --bucket ".$copyBucket." ".$myPermission; echo $cmd."\n"; passthru($cmd); 
 }
 
-# Result #
-$s3fsMountFolder="/work1/".$copyBucket;
-$s3fsLink="fuermount -u ".$s3fsMountFolder."\nmkdir -p ".$s3fsMountFolder."\n./s3fs ".$copyBucket." ".$s3fsMountFolder." -o url=http://".$endpoint." -o use_path_request_style -o uid=10183,gid=3254,umask=000";
-echo "01. Add External Bucket [ ".$copyBucket." ] for userid: ".$userIDList."\n\n";
+# 01. Result #
+echo "01. Add External Bucket [ ".$copyBucket." ], Folder [ ".$today." ] for userid: ".$userIDList."\n\n";
 
+# 02. s3 sync #
+$externalCmd="aws --profile=".$userID_array[0]." --endpoint-url=http://s3-cloud.nchc.org.tw";
+$s3Sync=$externalCmd." s3 sync s3://".$copyBucket."/".$today." ".$today; 
+echo "02. s3 sync command\n";
+echo $s3Sync."\n\n";
+
+# 03. s3fs mount folder #
 if (isset($uid) && isset($gid) && ($uid=!"") && ($gid!="")) {
- echo "02. Add s3fs mount command\n";
+ $s3fsMountFolder="/work1/".$copyBucket;
+ $s3fsLink="fuermount -u ".$s3fsMountFolder."\nmkdir -p ".$s3fsMountFolder."\n./s3fs ".$copyBucket." ".$s3fsMountFolder." -o url=http://".$endpoint." -o use_path_request_style -o uid=10183,gid=3254,umask=000";
+ echo "03. Add s3fs mount command\n";
  echo "Edit  ~/.passwd-s3fs\n";
  echo $s3fsLink."\n\n";
 }
 
+# 04. Hyper Link #
 if ($publicBucket==1) {
  $hyperLink="https://".$copyBucket.".".$endpoint."/".$today."/index.html?prefix=".$today."/";
  echo "04. ".$hyperLink."\n\n";
