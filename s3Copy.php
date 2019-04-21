@@ -4,7 +4,7 @@ date_default_timezone_set("Asia/Taipei");
 $today = "hmpsymlink".date("YmdHis"); 
 $endpoint="s3-cloud.nchc.org.tw";  
 $adminID="1603014"; 
-$sourceBucket="islide"; 
+$sourceBucket="hmpportal"; 
 $publicBucket=1;
 
 # user config #
@@ -13,7 +13,7 @@ $copyBucket="hmpbuckt".$userID_array[0];
 $uid=10183; $gid=3254;
 
 # copy file #
-$sourceFile_array=array("001.php","a/002.php","index.html");
+$sourceFile_array=array("index.html","A45W19023_S11_L001_R1_001.fastq.gz","A43W18524_S8_L001_R2_001.fastq","A45W19002_S1_L001_R1_001.fastq.gz","A45W19023_S11_L001_R2_001.fastq.gz","A43W18512_S1_L001_R1_001.fastq","A43W18512_R2.fil_pairs_R2.fastq","A43W18524_S8_L001_R1_001.fastq","A44W18534_S10_L001_R1_001.fastq.gz","A43W18512_R1.fil_pairs_R1.fastq","A43W18512_S1_L001_R2_001.fastq","A45W19002_S1_L001_R2_001.fastq.gz");
 
 # main cmd #
 $mainCmd="aws --profile=cloudian --endpoint-url=http://s3-cloud.nchc.org.tw";
